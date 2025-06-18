@@ -1,26 +1,36 @@
-from config import configuration as conf
-from config import data as dt
+from config import configuration
+from config import data
 import requests
 
 def get_docs():
-    return requests.get(conf.URL_SERVICE + conf.DOC_PATH)
+    return requests.get(configuration.URL_SERVICE + configuration.DOC_PATH)
 
 def get_logs():
-    return requests.get(conf.URL_SERVICE + conf.LOG_MAIN_PATH)
+    return requests.get(configuration.URL_SERVICE + configuration.LOG_MAIN_PATH)
 
 def get_users_table():
-    return requests.get(conf.URL_SERVICE + conf.USERS_TABLE_PATH)
+    return requests.get(configuration.URL_SERVICE + configuration.USERS_TABLE_PATH)
 
 def post_new_user(body):
-    return requests.post(conf.URL_SERVICE + conf.CREATE_USER_PATH,  # inserta la dirección URL completa
+    return requests.post(configuration.URL_SERVICE + configuration.CREATE_USER_PATH,  # inserta la dirección URL completa
                          json=body,  # inserta el cuerpo de solicitud
-                         headers=dt.headers)  # inserta los encabezados
+                         headers=data.headers)  # inserta los encabezados
 
 def post_products_kits(body):
-    return requests.post(conf.URL_SERVICE + conf.PRODUCTS_KITS_PATH,
+    return requests.post(configuration.URL_SERVICE + configuration.PRODUCTS_KITS_PATH,
                          # inserta la dirección URL completa
                          json=body,  # inserta el cuerpo de solicitud
-                         headers=dt.headers)  # inserta los encabezados
+                         headers=data.headers)  # inserta los encabezados
+
+def post_new_client_kit(body, user_token):
+    headers_token = data.headers.copy()
+    headers_token["Authorization"] = f"Bearer {user_token}"
+    return requests.post(configuration.URL_SERVICE + configuration.KITS_ENDPOINT,
+                         json=body,
+                         headers=headers_token)
+
+def show_kit_name():
+    return requests.get(configuration.URL_SERVICE + configuration.RECEIVED_KITS)
 
 def main():
 
@@ -38,6 +48,20 @@ def main():
 
     response_table = get_users_table()
     print(response_table.text)
+
+    server_response_user = post_new_user(data.user_body)
+    print(server_response_user.status_code)
+    print(server_response_user.json())
+    user_token = server_response_user.json()["authToken"]
+    print(f"Token created: {user_token}")
+    #time.sleep(configuration.GENERAL_DELAY)
+    server_response_kit = post_new_client_kit(data.kit_body, user_token)
+    print(server_response_kit.status_code)
+    print(server_response_kit.json())
+    #time.sleep(configuration.GENERAL_DELAY)
+    server_response_kit_name = show_kit_name()
+    print(server_response_kit_name.status_code)
+    print(server_response_kit_name.json())
 
     # --- Imprimir información de la respuesta y el contenido CSV ---
     # print(f"--- Detalles de la respuesta para {configuration.USERS_TABLE_PATH} ---")
